@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IP Logs Viewer</title>
+    <title>IP Logs Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -86,15 +86,6 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.3s;
-        }
-
-        .btn-danger {
-            background: #e94560;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c13651;
         }
 
         .btn-export {
@@ -234,7 +225,6 @@
             </select>
             <button class="btn-export" onclick="exportData()">📥 Export JSON</button>
             <button class="btn-export" onclick="exportCSV()">📄 Export CSV</button>
-            <button class="btn-danger" onclick="clearAll()">🗑 Clear All</button>
         </div>
 
         <div class="table-container">
@@ -250,12 +240,10 @@
                         <th>OS</th>
                         <th>Screen</th>
                         <th>Language</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <!-- Dynamic content -->
-                </tbody>
+                    </tbody>
             </table>
             <div id="emptyState" class="empty-state hidden">
                 <h2>No logs found</h2>
@@ -328,7 +316,6 @@
                     <td>${log.os}</td>
                     <td>${log.screenResolution}</td>
                     <td>${log.language}</td>
-                    <td><button onclick="deleteEntry(${log.id})" style="background:#e94560;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;">Delete</button></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -338,21 +325,6 @@
             allLogs = JSON.parse(localStorage.getItem('ipLogs') || '[]');
             updateStats();
             renderTable();
-        }
-
-        function deleteEntry(id) {
-            if (confirm('Delete this entry?')) {
-                allLogs = allLogs.filter(l => l.id !== id);
-                localStorage.setItem('ipLogs', JSON.stringify(allLogs));
-                loadLogs();
-            }
-        }
-
-        function clearAll() {
-            if (confirm('Are you sure you want to delete ALL logs?')) {
-                localStorage.removeItem('ipLogs');
-                loadLogs();
-            }
         }
 
         function exportData() {

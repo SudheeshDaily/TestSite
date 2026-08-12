@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Logs Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            padding: 20px;
+            color: #eee;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            font-size: 2.5rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input, .controls select {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .controls input::placeholder {
+            color: #aaa;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-danger {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c13651;
+        }
+
+        .btn-export {
+            background: #0f3460;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #1a4a7a;
+        }
+
+        .table-container {
+            background: #16213e;
+            border-radius: 10px;
+            overflow: hidden;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #0f3460;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: #fff;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #0f3460;
+            color: #ccc;
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .serial {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .ip-cell {
+            font-family: monospace;
+            color: #fff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #888;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-chrome { background: #4285f4; color: white; }
+        .badge-firefox { background: #ff7139; color: white; }
+        .badge-safari { background: #00d8ff; color: black; }
+        .badge-edge { background: #0078d7; color: white; }
+        .badge-other { background: #666; color: white; }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            th, td {
+                padding: 8px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="logger.html" class="back-link">← Back to Logger</a>
+        <h1>📊 IP Logs Dashboard</h1>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h3 id="totalLogs">0</h3>
+                <p>Total Logs</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="uniqueIPs">0</h3>
+                <p>Unique IPs</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="topCountry">-</h3>
+                <p>Top Country</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="topBrowser">-</h3>
+                <p>Top Browser</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search IP, country, browser...">
+            <select id="browserFilter">
+                <option value="">All Browsers</option>
+                <option value="Chrome">Chrome</option>
+                <option value="Firefox">Firefox</option>
+                <option value="Safari">Safari</option>
+                <option value="Edge">Edge</option>
+            </select>
+            <button class="btn-export" onclick="exportData()">📥 Export JSON</button>
+            <button class="btn-export" onclick="exportCSV()">📄 Export CSV</button>
+            <button class="btn-danger" onclick="clearAll()">🗑 Clear All</button>
+        </div>
+
+        <div class="table-container">
+            <table id="logsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Timestamp</th>
+                        <th>IP Address</th>
+                        <th>Location</th>
+                        <th>ISP</th>
+                        <th>Browser</th>
+                        <th>OS</th>
+                        <th>Screen</th>
+                        <th>Language</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dynamic content -->
+                </tbody>
+            </table>
+            <div id="emptyState" class="empty-state hidden">
+                <h2>No logs found</h2>
+                <p>Visit the logger page to start collecting data</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allLogs = [];
+
+        function getBrowserBadgeClass(browser) {
+            const map = {
+                'Chrome': 'badge-chrome',
+                'Firefox': 'badge-firefox',
+                'Safari': 'badge-safari',
+                'Edge': 'badge-edge'
+            };
+            return map[browser] || 'badge-other';
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function updateStats() {
+            document.getElementById('totalLogs').textContent = allLogs.length;
+            
+            const uniqueIPs = new Set(allLogs.map(l => l.ip)).size;
+            document.getElementById('uniqueIPs').textContent = uniqueIPs;
+
+            // Top country
+            const countries = {};
+            allLogs.forEach(l => {
+                countries[l.country] = (countries[l.country] || 0) + 1;
+            });
+            const topCountry = Object.entries(countries).sort((a,b) => b[1]-a[1])[0];
+            document.getElementById('topCountry').textContent = topCountry ? topCountry[0] : '-';
+
+            // Top browser
+            const browsers = {};
+            allLogs.forEach(l => {
+                browsers[l.browser] = (browsers[l.browser] || 0) + 1;
+            });
+            const topBrowser = Object.entries(browsers).sort((a,b) => b[1]-a[1])[0];
+            document.getElementById('topBrowser').textContent = topBrowser ? topBrowser[0] : '-';
+        }
+
+        function renderTable(logs = allLogs) {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            tbody.innerHTML = '';
+
+            if (logs.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            logs.forEach((log, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="serial">${index + 1}</td>
+                    <td>${formatDate(log.timestamp)}</td>
+                    <td class="ip-cell">${log.ip}</td>
+                    <td>${log.city || 'N/A'}, ${log.country || 'N/A'}</td>
+                    <td>${log.isp || 'N/A'}</td>
+                    <td><span class="badge ${getBrowserBadgeClass(log.browser)}">${log.browser}</span></td>
+                    <td>${log.os}</td>
+                    <td>${log.screenResolution}</td>
+                    <td>${log.language}</td>
+                    <td><button onclick="deleteEntry(${log.id})" style="background:#e94560;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;">Delete</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function loadLogs() {
+            allLogs = JSON.parse(localStorage.getItem('ipLogs') || '[]');
+            updateStats();
+            renderTable();
+        }
+
+        function deleteEntry(id) {
+            if (confirm('Delete this entry?')) {
+                allLogs = allLogs.filter(l => l.id !== id);
+                localStorage.setItem('ipLogs', JSON.stringify(allLogs));
+                loadLogs();
+            }
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to delete ALL logs?')) {
+                localStorage.removeItem('ipLogs');
+                loadLogs();
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(allLogs, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ip-logs-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        function exportCSV() {
+            const headers = ['Serial', 'Timestamp', 'IP', 'City', 'Region', 'Country', 'Postal', 'ISP', 'Browser', 'OS', 'Screen', 'Language', 'Timezone', 'User Agent'];
+            const rows = allLogs.map((log, idx) => [
+                idx + 1,
+                log.timestamp,
+                log.ip,
+                log.city,
+                log.region,
+                log.country,
+                log.postal,
+                log.isp,
+                log.browser,
+                log.os,
+                log.screenResolution,
+                log.language,
+                log.timezone,
+                `"${log.userAgent}"`
+            ]);
+            
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ip-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // Search and filter
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const browserFilter = document.getElementById('browserFilter').value;
+            
+            const filtered = allLogs.filter(log => {
+                const matchesSearch = !term || 
+                    log.ip.toLowerCase().includes(term) ||
+                    (log.country && log.country.toLowerCase().includes(term)) ||
+                    log.browser.toLowerCase().includes(term) ||
+                    log.os.toLowerCase().includes(term);
+                
+                const matchesBrowser = !browserFilter || log.browser === browserFilter;
+                
+                return matchesSearch && matchesBrowser;
+            });
+            
+            renderTable(filtered);
+        });
+
+        document.getElementById('browserFilter').addEventListener('change', () => {
+            document.getElementById('searchInput').dispatchEvent(new Event('input'));
+        });
+
+        // Load on page load
+        window.addEventListener('load', loadLogs);
+    </script>
+</body>
+</html>

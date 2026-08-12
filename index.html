@@ -35,14 +35,16 @@
     <script>
         // Your Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCnomrcylfEZB15fJjotyhzn9qI_PuNqV8",
-            authDomain: "ip-logger-34bcb.firebaseapp.com",
-            projectId: "ip-logger-34bcb",
-            storageBucket: "ip-logger-34bcb.firebasestorage.app",
-            messagingSenderId: "997462036603",
-            appId: "1:997462036603:web:9d5afd4e69bfda89d792de",
-            measurementId: "G-6L0VM63H81"
-        };
+    apiKey: "AIzaSyCnomrcylfEZB15fJjotyhzn9qI_PuNqV8",
+    authDomain: "ip-logger-34bcb.firebaseapp.com",
+    databaseURL: "https://ip-logger-34bcb-default-rtdb.firebaseio.com", // <-- ADD THIS LINE
+    projectId: "ip-logger-34bcb",
+    storageBucket: "ip-logger-34bcb.firebasestorage.app",
+    messagingSenderId: "997462036603",
+    appId: "1:997462036603:web:9d5afd4e69bfda89d792de",
+    measurementId: "G-6L0VM63H81"
+};
+
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
